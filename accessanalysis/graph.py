@@ -26,7 +26,7 @@ class AccessGraph(Generic[N]):
                     ret[d].append(('from', f))
         return ret
 
-    def __iter__(self):
+    def nodes(self):
         ret = set(self.connections)
         for tos in self.connections.values():
             for d in tos:
@@ -38,9 +38,20 @@ class AccessGraph(Generic[N]):
         f, t = item
         return t in self.connections.get(f, ())
 
-    def __setitem__(self, key: Tuple[N, N], value: bool):
+    def __setitem__(self, key: Tuple[N, N], value: Union[bool, str]):
         f, t = key
-        if value:
+        # if value is a string, we assume f is the user and t is the file
+        if value == '':
+            pass
+        elif value == 'r':
+            self[t, f] = True
+        elif value == 'w':
+            self[f, t] = True
+        elif value in ('rw', 'wr'):
+            self[t, f] = self[f, t] = True
+
+        elif value:
+            self.connections.setdefault(f,set())
             self.connections[f].add(t)
         else:
-            self.connections[f].remove(t)
+            raise Exception('removing is not supported')
