@@ -8,6 +8,7 @@ class AccessGraph(Generic[N]):
         self.connections: MutableMapping[N, MutableSet[N]] = {}
         self.users = set()
         self.files = set()
+        self.compressed = None
         self.invalid_access = ...  # ... means unknown
         self.BLP_mapping = ...
         self.UNIX_mapping_modern = ...
@@ -55,3 +56,14 @@ class AccessGraph(Generic[N]):
             self.connections[f].add(t)
         else:
             raise Exception('removing is not supported')
+
+    def get(self,user,file):
+        w = self[user, file]
+        r = self[file, user]
+        if w and r:
+            return 'rw'
+        if w:
+            return 'w'
+        if r:
+            return 'r'
+        return ''
