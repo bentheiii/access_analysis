@@ -6,6 +6,7 @@ from accessanalysis.graph import AccessGraph
 
 _part_pattern = re.compile('\(\s*(?P<user>[a-zA-Z_0-9]+)\s*,\s*(?P<permissions>r|rw|w|wr)\s*\)')
 
+
 def read(source: Iterable[str]) -> AccessGraph:
     """
     each line is of the format:
@@ -19,7 +20,7 @@ def read(source: Iterable[str]) -> AccessGraph:
             continue
         file = line[:col_index]
         ret.files.add(file)
-        line = line[col_index+1:]
+        line = line[col_index + 1:]
         parts = _part_pattern.finditer(line)
         for p in parts:
             user = p['user']
