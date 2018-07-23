@@ -1,4 +1,4 @@
 from accessanalysis.read import read
-from accessanalysis.find_invalid_access import find_invalid_access
+from accessanalysis.find_invalid_access import invalid_access
 from accessanalysis.unix_permission import unix_permissions
 from accessanalysis.dot import dot

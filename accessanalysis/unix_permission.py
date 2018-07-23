@@ -22,7 +22,8 @@ def _get_unix_perm(file, graph) -> UNIXPermission:
         return UNIXPermission('---', '---', '---', set(), '<root>')
     if len(permission_groups) == 1:
         (perm, users), = permission_groups.items()
-        return UNIXPermission(perm, perm, perm, set(), next(iter(users)))
+        arb_user = next(iter(users))
+        return UNIXPermission(perm, perm, perm, {arb_user}, arb_user)
     permission_groups = sorted(permission_groups.items(), key=lambda x: len(x[1]))
     if len(permission_groups) == 2:
         (perm0, users0), (perm1, users1) = permission_groups

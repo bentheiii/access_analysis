@@ -4,7 +4,7 @@ from accessanalysis.__util import *
 
 
 @cache_attr('invalid_access')
-def find_invalid_access(graph: AccessGraph):
+def invalid_access(graph: AccessGraph):
     compressed = compress_graph(graph)
     shortest_invalid = None
     for (f, t), v in compressed.items():

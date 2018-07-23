@@ -8,7 +8,7 @@ g = read(
     f3:
     """.splitlines()
 )
-ia = find_invalid_access(g)
+ia = invalid_access(g)
 print('->'.join(ia))
 up = unix_permissions(g)
 if isinstance(up, str):
