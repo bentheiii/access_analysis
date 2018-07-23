@@ -1,8 +1,9 @@
 from typing import Dict
 
-from accessanalysis.graph import AccessGraph
-
 from collections import namedtuple
+
+from accessanalysis.graph import AccessGraph
+from accessanalysis.__util import *
 
 UNIXPermission = namedtuple('UNIXPermission', 'owner_perm group_perm other_perm group owner')
 
@@ -33,9 +34,8 @@ def _get_unix_perm(file, graph) -> UNIXPermission:
     return UNIXPermission(o_perm, g_perm, r_perm, group, owner)
 
 
+@cache_attr('UNIX_mapping')
 def unix_permissions(graph: AccessGraph):
-    if graph.UNIX_mapping is not ...:
-        return graph.UNIX_mapping
     ret: Dict[str, UNIXPermission] = {}
     for f in graph.files:
         try:

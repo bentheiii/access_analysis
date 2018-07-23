@@ -2,6 +2,7 @@ import itertools as it
 from typing import Dict, Tuple, Optional
 
 from accessanalysis.graph import AccessGraph
+from accessanalysis.__util import *
 
 
 def add_paths(a, b):
@@ -18,9 +19,8 @@ def gt_paths(old, new):
     return len(old).__gt__(len(new))
 
 
+@cache_attr('compressed')
 def compress_graph(graph: AccessGraph) -> Dict[Tuple[str, str], Optional[Tuple[str]]]:  # floyd-warshall
-    if graph.compressed:
-        return graph.compressed
     nodes = graph.nodes()
     ret = {(f, t): None for f, t in it.product(nodes, repeat=2)}
     for f, t in ret:
@@ -37,5 +37,4 @@ def compress_graph(graph: AccessGraph) -> Dict[Tuple[str, str], Optional[Tuple[s
                 if gt_paths(old, new):
                     ret[f, t] = new
 
-    graph.compressed = ret
     return ret

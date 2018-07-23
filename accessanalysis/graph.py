@@ -8,10 +8,16 @@ class AccessGraph(Generic[N]):
         self.connections: MutableMapping[N, MutableSet[N]] = {}
         self.users = set()
         self.files = set()
-        self.compressed = None
+        self.compressed = ...
         self.invalid_access = ...  # ... means unknown
         self.BLP_mapping = ...
         self.UNIX_mapping = ...
+        self.dot = ...
+
+    def edges(self):
+        for f, c in self.connections.items():
+            for t in c:
+                yield f, t
 
     def nodes(self):
         ret = set(self.connections)

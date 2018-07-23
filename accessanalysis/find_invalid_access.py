@@ -1,7 +1,9 @@
 from accessanalysis.compress import compress_graph, gt_paths
 from accessanalysis.graph import AccessGraph
+from accessanalysis.__util import *
 
 
+@cache_attr('invalid_access')
 def find_invalid_access(graph: AccessGraph):
     compressed = compress_graph(graph)
     shortest_invalid = None
@@ -14,5 +16,4 @@ def find_invalid_access(graph: AccessGraph):
             continue
         if gt_paths(shortest_invalid, v):
             shortest_invalid = v
-    graph.invalid_access = shortest_invalid
     return shortest_invalid
