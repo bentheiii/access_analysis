@@ -16,4 +16,14 @@ if isinstance(up, str):
 else:
     print('\n'.join(f + ': ' + ' '.join(str(x) for x in r) for (f, r) in up.items()))
 
-dot(g).render('out.gv', view=True, cleanup=True)
+#dot(g).render('out.gv', view=True, cleanup=True)
+
+g = read(
+    """
+    f0:(u0,r)->(u1,w)
+    f1:(u0,w)->(u1,r)
+    f2:(u0,rw)->(u1,r)->(u2,r)->(u3,w)
+    f3:(u3,rw)
+    """.splitlines()
+)
+blp(g)
