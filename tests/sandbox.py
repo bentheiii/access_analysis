@@ -20,10 +20,12 @@ else:
 
 g = read(
     """
-    f0:(u0,r)->(u1,w)
-    f1:(u0,w)->(u1,r)
-    f2:(u0,rw)->(u1,r)->(u2,r)->(u3,w)
-    f3:(u3,rw)
+    f1:(u1,rw)->(u2,r)->(u3,r)->(u4,r)
+    f2:(u1,w)->(u2,rw)->(u3,w)->(u4,r)
+    f3:(u1,w)->(u2,r)->(u3,rw)->(u4,r)
+    f4:(u1,w)->(u2,rw)->(u3,w)->(u4,r)
+    f5:(u1,w)->(u3,w)->(u2,rw)->(u4,r)
+    f6:(u6,r)
     """.splitlines()
 )
-blp(g)
+print(blp(g))
