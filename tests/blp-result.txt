@@ -1,1 +1,22 @@
-(True, {'u3': 'lv-a', 'f3': 'lv-a', 'u1': 'lv-b', 'f1': 'lv-b', 'u2': 'lv-c', 'f4': 'lv-c', 'f2': 'lv-c', 'u4': 'lv-d'}, {'lv-b': ['lv-a', 'lv-c', 'lv-d'], 'lv-a': ['lv-c', 'lv-d'], 'lv-c': ['lv-d']})
+No invalid access detected
+BLP mapping:
+f1: lv-a
+u1: lv-a
+f4: lv-b
+f2: lv-b
+u2: lv-b
+u3: lv-c
+f3: lv-c
+u4: lv-d
+
+lv-a < lv-b
+lv-a < lv-c
+lv-a < lv-d
+lv-c < lv-b
+lv-c < lv-d
+lv-b < lv-d
+file	permissions	owner	group
+f1	rw- rw- r--	u1	{'u1'}
+f4	r-- rw- -w-	u4	{'u2'}
+f2	r-- rw- -w-	u4	{'u2'}
+f3	-w- rw- r--	u1	{'u3'}

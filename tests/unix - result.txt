@@ -1,3 +1,6 @@
-f1: r-- -w- --- {'u0'} u1
-f2: -w- rw- r-- {'u0'} u3
-f0: r-- r-- --- {'u0'} u0
+Invalid access detected: u3->f2->u0->f1
+no BLP mapping: there is invalid access in the graph
+file	permissions	owner	group
+f1	r-- -w- ---	u1	{'u0'}
+f2	rw- -w- r--	u0	{'u3'}
+f0	r-- r-- ---	u0	{'u0'}

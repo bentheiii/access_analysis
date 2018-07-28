@@ -5,7 +5,9 @@ import accessanalysis
 parser = argparse.ArgumentParser(__name__)
 parser.add_argument('source_acl', type=open, help='a file containing the acl to use')
 parser.add_argument('--onlydo', dest='only_do', default='ibud',
-                    help='only do some parts of the program, must be a subset of iubd')
+                    help='only do some parts of the program, must be a subset of iubd.'
+                         ' i: find invalid access, b: find BLP mapping,'
+                         ' u: find UNIX mapping, d: greate and display visual dot graph')
 
 
 def main():
@@ -28,7 +30,7 @@ def main():
                 for y in ys:
                     print(f'{x} < {y}')
         else:
-            print('no BLP mapping: '+assigned)
+            print('no BLP mapping: ' + assigned)
     if 'u' in args.only_do:
         umap = accessanalysis.unix_permissions(graph)
         if isinstance(umap, str):

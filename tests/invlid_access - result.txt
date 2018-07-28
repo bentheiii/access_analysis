@@ -1,1 +1,6 @@
-f1->u1->f2->u2
+Invalid access detected: f1->u1->f2->u2
+no BLP mapping: there is invalid access in the graph
+file	permissions	owner	group
+f2	-w- -w- r--	u1	{'u1'}
+f3	-w- -w- ---	u1	{'u1'}
+f1	r-- r-- ---	u1	{'u1'}
