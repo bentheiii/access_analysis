@@ -1,0 +1,1 @@
+(True, {'u3': 'lv-a', 'f3': 'lv-a', 'u1': 'lv-b', 'f1': 'lv-b', 'u2': 'lv-c', 'f4': 'lv-c', 'f2': 'lv-c', 'u4': 'lv-d'}, {'lv-b': ['lv-a', 'lv-c', 'lv-d'], 'lv-a': ['lv-c', 'lv-d'], 'lv-c': ['lv-d']})
