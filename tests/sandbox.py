@@ -1,5 +1,5 @@
 from accessanalysis import *
-
+'''
 g = read(
     """
     f0:(u0,r)
@@ -15,7 +15,7 @@ if isinstance(up, str):
     print(up)
 else:
     print('\n'.join(f + ': ' + ' '.join(str(x) for x in r) for (f, r) in up.items()))
-
+'''
 #dot(g).render('out.gv', view=True, cleanup=True)
 
 g = read(

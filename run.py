@@ -18,8 +18,17 @@ def main():
         else:
             print('No invalid access detected')
     if 'b' in args.only_do:
-        blp = accessanalysis.blp_mapping(graph)
-        print(blp)  # todo
+        w, assigned, order = accessanalysis.blp(graph)
+        if w:
+            print('BLP mapping:')
+            for n, lv in assigned.items():
+                print(f'{n}: {lv}')
+            print()
+            for x, ys in order.items():
+                for y in ys:
+                    print(f'{x} < {y}')
+        else:
+            print('no BLP mapping: '+assigned)
     if 'u' in args.only_do:
         umap = accessanalysis.unix_permissions(graph)
         if isinstance(umap, str):

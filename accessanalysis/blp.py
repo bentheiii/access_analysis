@@ -1,181 +1,107 @@
-from collections import namedtuple
-from accessanalysis.find_invalid_access import invalid_access
-from accessanalysis.graph import AccessGraph
-from accessanalysis.__util import *
+from typing import Dict, Set, List, Tuple, Optional
+
 import itertools as it
 
+from accessanalysis.find_invalid_access import invalid_access
+from accessanalysis.compress import compress_graph
+from accessanalysis.graph import AccessGraph
+from accessanalysis.__util import *
 
-@cache_attr('blp')
+
+def get_level_id(i):
+    """
+    >>> get_level_id(0)
+    'a'
+    >>> get_level_id(26)
+    'ba'
+    """
+    vocab = ord('z') - ord('a') + 1
+    if i < vocab:
+        return chr(i + ord('a'))
+    return get_level_id(i // vocab) + get_level_id(i % vocab)
+
+
+@cache_attr('BLP_mapping')
 def blp(graph: AccessGraph):
     if invalid_access(graph) is not None:
-        return None  # if there is an invalid access there is no BLP
+        return False, 'there is invalid access in the graph', None  # if there is an invalid access there is no BLP
 
-    equal_groups = create_equal_groups(graph)
-    merged_groups = merge_groups(equal_groups, graph)
-    sorted_groups = sort_groups(merged_groups, graph)
-
-    nodes_levels = {}
-    for level in sorted_groups:
-        for node in sorted_groups[level]:
-            nodes_levels[node] = level
-
-    return nodes_levels
+    try:
+        eq = create_equal_groups(graph)
+        mg = merge_groups(eq, graph)
+        sg = sort_groups(mg, compress_graph(graph))
+        as_ = assign(mg)
+        return True, as_, sg
+    except ValueError as e:
+        return False, e.args[0], None
 
 
-def create_equal_groups(graph):
-    equal_groups = {}
-
-    for f in graph.nodes():  # iterate through files
-        if f in graph.users:
-            continue
-
-        file_group = []
-
-        for u in graph.nodes():  # iterate through users
-            if u not in graph.users:
-                continue
-
-            if graph[f, u] and graph[u, f]:
-                file_group.append(u)
-
-        equal_groups[f] = file_group
+def create_equal_groups(graph: AccessGraph[str]) -> Dict[str, Set[str]]:
+    equal_groups = {f:
+                        frozenset(u for u in graph.users if graph.get(u, f) == 'rw-')
+                    for f in graph.files}
 
     return equal_groups
 
 
-def merge_groups(equal_groups, graph):
-    merged_groups = []
-    for f0, f1 in it.combinations(equal_groups, 2):
-        for u0 in equal_groups[f0]:
-            for u1 in equal_groups[f1]:
-                if u0 == u1:
-                    if equal_groups[f0] == equal_groups[f1]:
-                        add_to_merged_groups(merged_groups, equal_groups, f0, f1)
-                    else:
-                        return None  # No BLP
+def merge_groups(equal_groups: Dict[str, Set[str]], graph: AccessGraph) -> List[Tuple[str, Set[str]]]:
+    for (f0, g0), (f1, g1) in it.combinations(equal_groups.items(), 2):
+        if g0.intersection(g1) and g0 != g1:
+            raise ValueError(f'two groups have non, trivial intersects for files {f0}, {f1}')
+    # now we know that all same equality groups are equal
+    ret = []
+    for f, g in equal_groups.items():
+        m_group = None
+        if g:  # if g is empty it needs to be in a separate group
+            for mg in ret:
+                if g < mg:
+                    m_group = mg
+                    break
+        if m_group is None:
+            m_group = set(g)
+            ret.append(m_group)
 
-    add_rest_of_groups(merged_groups, equal_groups, graph)
-
-    tuples_merged_groups = []
-    for g in merged_groups:
-        tuples_merged_groups.append(tuple(g))
-
-    return tuples_merged_groups
-
-
-def add_to_merged_groups(merged_groups, equal_groups, f0, f1):
-    for group in merged_groups:
-        if f0 in group and f1 in group:
-            return
-        if f0 in group:
-            group.append(f1)
-            return
-        if f1 in group:
-            group.append(f0)
-            return
-
-    temp_group = [f0, f1]
-    temp_group = temp_group + equal_groups[f0]
-    merged_groups.append(temp_group)
+        m_group.add(f)
+    for u in graph.users:
+        if not any((u in g) for g in ret):
+            ret.append({u})
+    ret = [('lv-' + get_level_id(i), frozenset(s)) for (i, s) in enumerate(ret)]
+    return ret
 
 
-def add_rest_of_groups(merged_groups, equal_groups, graph):
-    for file in equal_groups:
-        flag = True
-        for group in merged_groups:
-            if file in group:
-                flag = False
-                break
-        if flag:
-            temp_group = [file]
-            temp_group = temp_group + equal_groups[file]
-            merged_groups.append(temp_group)
+def sort_groups(merged_groups: List[Tuple[str, Set[str]]], compressed: Dict[Tuple[str, str], Optional[Tuple[str]]]):
+    lt: Dict[str, List[str]] = {}  # y in lt[x] ==> x < y
+    for (n0, g0), (n1, g1) in it.combinations(merged_groups, 2):
+        (arb0, *_), (arb1, *_) = g0, g1
+        order = False
+        if compressed[arb0, arb1]:
+            order = True
+        elif compressed[arb1, arb0]:
+            order = True
+            (n0, g0), (n1, g1) = (n1, g1), (n0, g0)
+        del arb0, arb1  # these might be flipped, so delete them for safety
+        # we can be certain that if arb0 -> arb1 then all g0 -> g1 because:
+        # * all g0 and all g1 are in rw states with each other
+        # * there are no invalid accesses in the graph
+        #
+        # so if there were a x0 in g0 and x1 in g1 where x0 -/-> x1 then that would be an invalid access since
+        # x0->arb0->arb1->x1
+        if order:
+            lt.setdefault(n0, [])
+            lt[n0].append(n1)
 
-    for node in graph.nodes():
-        flag = True
-        for group in merged_groups:
-            if node in group:
-                flag = False
-                break
-
-        if flag:
-            temp_group = [node]
-            merged_groups.append(temp_group)
-
-
-def sort_groups(merged_groups, graph):
-    ratio_dict = {}
-    for g0, g1 in it.combinations(merged_groups, 2):
-        ratio_dict[(g0, g1)] = find_classification_ratio(g0, g1, graph)
-
-    sorted_list = {}
-    for i in range(len(merged_groups)):
-        if len(ratio_dict) is 1:
-            last_item = ratio_dict.popitem()
-            if last_item[1] == "<":
-                sorted_list[2] = last_item[0][1]
-                sorted_list[1] = last_item[0][0]
-            else:
-                sorted_list[2] = last_item[0][0]
-                sorted_list[1] = last_item[0][1]
-            break
-        sorted_list[len(merged_groups) - i] = find_biggest(ratio_dict)
-        ratio_dict = create_new_ration_list(ratio_dict, sorted_list[len(merged_groups) - i])
-
-    return sorted_list
+    # now we need to check for transitivity
+    for a, uppers in lt.items():
+        for b in uppers:  # a < b
+            for c in lt.get(b, ()):  # b < c
+                if c not in uppers:  # a < c?
+                    raise ValueError(f'non-transitive order between groups {a}, {b}, {c}')
+    return lt
 
 
-def find_classification_ratio(g0, g1, graph):
-    for n in g0:
-        for m in g1:
-            if (n in graph.users) == (m in graph.users):
-                continue  # we are not interested in file-file or user-user connections
-            if graph[n, m]:
-                if check_all_connected(g0, g1, graph):
-                    return '<'
-            elif graph[m, n]:
-                if check_all_connected(g1, g0, graph):
-                    return '>'
-            else:
-                return None
-
-
-def check_all_connected(g0, g1, graph):
-    for n in g0:
-        for m in g1:
-            if (n in graph.users) == (m in graph.users):
-                continue  # we are not interested in file-file or user-user connections
-            if graph[n, m] is None:
-                return False
-
-    return True
-
-
-def find_biggest(ratio_dict):
-    biggest = None
-    for t in ratio_dict:
-        if ratio_dict[t] == ">":
-            if biggest is None:
-                biggest = t[0]
-            elif biggest == t[0]:
-                continue
-            elif ((t[0], biggest) in ratio_dict and ratio_dict[(t[0], biggest)] is ">") or ((biggest, t[0]) in ratio_dict and ratio_dict[(biggest, t[0])] is "<"):
-                biggest = t[0]
-        elif ratio_dict[t] == "<":
-            if biggest is None:
-                biggest = t[1]
-            elif biggest == t[1]:
-                continue
-            elif ((t[1], biggest) in ratio_dict and ratio_dict[(t[1], biggest)] is ">") or ((biggest, t[1]) in ratio_dict and ratio_dict[(biggest, t[1])] is "<"):
-                biggest = t[1]
-
-    return biggest
-
-
-def create_new_ration_list(ratio_dict, x):
-    new_ratio_dict = {}
-    for t in ratio_dict:
-        if t[0] != x and t[1] != x:
-            new_ratio_dict[t] = ratio_dict[t]
-
-    return new_ratio_dict
+def assign(mg):
+    ret = {}
+    for n, g in mg:
+        for i in g:
+            ret[i] = n
+    return ret

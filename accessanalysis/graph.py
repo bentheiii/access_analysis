@@ -6,8 +6,8 @@ N = TypeVar('N')
 class AccessGraph(Generic[N]):
     def __init__(self):
         self.connections: MutableMapping[N, MutableSet[N]] = {}
-        self.users = set()
-        self.files = set()
+        self.users: MutableSet[N] = set()
+        self.files: MutableSet[N] = set()
         self.compressed = ...
         self.invalid_access = ...  # ... means unknown
         self.BLP_mapping = ...
